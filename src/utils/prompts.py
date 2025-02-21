@@ -1,20 +1,22 @@
 SECURITY_ASSESSMENT_PROMPT = """
-As a cybersecurity expert, analyze the following business context and provide security recommendations:
+Analyze the following business context for critical security gaps:
 {business_context}
 
-Focus on:
-1. Network security
-2. Data protection
-3. Employee training
-4. Compliance requirements
+Provide specific recommendations for:
+1. Immediate security fixes (next 24 hours)
+2. Essential data protection measures
+3. Top 3 employee security protocols
+4. Industry-specific compliance checklist
 """
 
 THREAT_ANALYSIS_PROMPT = """
-Evaluate potential security threats for:
+Quick threat assessment for:
 {business_details}
 
-Provide:
-1. Risk assessment
-2. Mitigation strategies
-3. Implementation priorities
+Deliver:
+1. Top 3 critical vulnerabilities
+2. Rapid response actions
+3. Cost-effective security solutions
+4. Monitoring checklist
 """
+
