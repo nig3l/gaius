@@ -1,3 +1,13 @@
+from typing import Dict, List
+from enum import Enum
+
+class ThreatLevel(Enum):
+    LOW = 1
+    MEDIUM = 2
+    HHIGH = 3
+    CRITICAL = 4
+    
+    
 class GaiusGeneral:
     def __init__(self):
         self.name = "Gaius Julius Caesar"
@@ -79,3 +89,113 @@ class GaiusGeneral:
         Maintains core strategic value while updating implementation
         """
         pass
+    
+    def evaluate_situation(self, context: Dict) -> Dict:
+        """
+        Caesar's systematic approach to situation analysis
+        Returns detailed strategic assessment
+        """
+        assessment = {
+            "threat_level": None,
+            "key_factors": [],
+            "vulnerabilities": [],
+            "opportunities": [],
+            "recommended_principles": []
+        }
+        
+        # 1. Terrain and Position Analysis (Caesar always started here)
+        terrain_factors = self._analyze_terrain(context.get('terrain', {}))
+        assessment['key_factors'].extend(terrain_factors)
+        
+        # 2. Force Comparison (Caesar's strength/weakness evaluation)
+        force_analysis = self._analyze_forces(
+            context.get('friendly_forces', {}),
+            context.get('enemy_forces', {})
+        )
+        assessment['threat_level'] = self._determine_threat_level(force_analysis)
+        
+        # 3. Strategic Opportunities (Caesar's opportunity spotting)
+        opportunities = self._identify_opportunities(context, force_analysis)
+        assessment['opportunities'] = opportunities
+        
+        # 4. Principle Selection (Which strategies best fit the situation)
+        applicable_principles = self._select_strategic_principles(
+            assessment['threat_level'],
+            assessment['key_factors'],
+            opportunities
+        )
+        assessment['recommended_principles'] = applicable_principles
+        
+        return assessment
+
+    def _analyze_terrain(self, terrain_data: Dict) -> List[str]:
+        """Caesar's terrain analysis methodology"""
+        key_factors = []
+        
+        # High ground assessment (Caesar's favorite tactical advantage)
+        if terrain_data.get('elevation_advantages'):
+            key_factors.append('elevation_advantage_available')
+            
+        # Supply line vulnerability (Critical to Caesar's campaigns)
+        if terrain_data.get('supply_routes'):
+            key_factors.append('secure_supply_lines')
+            
+        # Retreat paths (Caesar always ensured escape routes)
+        if terrain_data.get('exit_routes') < 2:
+            key_factors.append('limited_maneuverability')
+            
+        return key_factors
+
+    def _analyze_forces(self, friendly: Dict, enemy: Dict) -> Dict:
+        """Caesar's force comparison methodology"""
+        return {
+            'strength_ratio': friendly.get('strength', 0) / enemy.get('strength', 1),
+            'mobility_advantage': friendly.get('mobility', 0) > enemy.get('mobility', 0),
+            'supply_advantage': friendly.get('supplies', 0) > enemy.get('supplies', 0)
+        }
+
+    def _determine_threat_level(self, force_analysis: Dict) -> ThreatLevel:
+        """Caesar's threat assessment methodology"""
+        if force_analysis['strength_ratio'] < 0.5:
+            return ThreatLevel.CRITICAL
+        elif force_analysis['strength_ratio'] < 0.8:
+            return ThreatLevel.HIGH
+        elif force_analysis['strength_ratio'] < 1.2:
+            return ThreatLevel.MEDIUM
+        return ThreatLevel.LOW
+
+    def _identify_opportunities(self, context: Dict, force_analysis: Dict) -> List[str]:
+        """Caesar's opportunity identification methodology"""
+        opportunities = []
+        
+        # Look for divide and conquer opportunities
+        if context.get('enemy_unity', 1.0) < 0.8:
+            opportunities.append('internal_division_exploit')
+            
+        # Quick strike opportunities
+        if force_analysis['mobility_advantage']:
+            opportunities.append('rapid_strike')
+            
+        # Supply line attacks (Caesar's favorite)
+        if not force_analysis['supply_advantage']:
+            opportunities.append('supply_line_vulnerability')
+            
+        return opportunities
+
+    def _select_strategic_principles(self, threat_level: ThreatLevel, 
+                                   factors: List[str], 
+                                   opportunities: List[str]) -> List[str]:
+        """Caesar's principle selection logic"""
+        selected_principles = []
+        
+        if 'internal_division_exploit' in opportunities:
+            selected_principles.append('divide_et_impera')
+            
+        if 'rapid_strike' in opportunities:
+            selected_principles.append('rapid_deployment')
+            
+        if threat_level in [ThreatLevel.HIGH, ThreatLevel.CRITICAL]:
+            selected_principles.append('intelligence_network')
+            
+        return selected_principles
+    
