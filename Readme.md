@@ -1,1 +1,1 @@
-Cybersecurity defense assistant focused on helping small businesses protect themselves legally and ethically.
+Defense General focused on leading teams during any kind of attacks at the organisations
