@@ -128,22 +128,39 @@ class GaiusGeneral:
         
         return assessment
 
-    def _analyze_terrain(self, terrain_data: Dict) -> List[str]:
-        """Caesar's terrain analysis methodology"""
+    def _analyze_terrain(self, network_topology: Dict) -> List[str]:
+        """
+        Caesar's terrain analysis methodology adapted for network infrastructure
+        """
         key_factors = []
+    
+        # Network Visibility Points (High Ground)
+        visibility_points = network_topology.get('monitoring_points', {})
+        if visibility_points.get('ids_coverage'):
+            key_factors.append('ids_monitoring_advantage')
+        if visibility_points.get('siem_coverage'):
+            key_factors.append('siem_visibility_advantage')
+        if visibility_points.get('netflow_analytics'):
+            key_factors.append('traffic_analysis_capability')
+    
+        # Data Transmission Paths (Supply Routes)
+        data_paths = network_topology.get('data_routes', {})
+        if data_paths.get('encrypted_channels'):
+            key_factors.append('secure_data_transmission')
+        if data_paths.get('redundant_paths'):
+            key_factors.append('resilient_data_flow')
+        if data_paths.get('bottlenecks'):
+            key_factors.append('transmission_vulnerability')
+    
+        # Failover Systems (Exit Routes)
+        failover = network_topology.get('failover_systems', {})
+        if failover.get('backup_sites') < 2:
+            key_factors.append('limited_failover_options')
+        if failover.get('disaster_recovery'):
+            key_factors.append('recovery_capability')
+        if failover.get('backup_power'):
+            key_factors.append('power_resilience')
         
-        # High ground assessment (Caesar's favorite tactical advantage)
-        if terrain_data.get('elevation_advantages'):
-            key_factors.append('elevation_advantage_available')
-            
-        # Supply line vulnerability (Critical to Caesar's campaigns)
-        if terrain_data.get('supply_routes'):
-            key_factors.append('secure_supply_lines')
-            
-        # Retreat paths (Caesar always ensured escape routes)
-        if terrain_data.get('exit_routes') < 2:
-            key_factors.append('limited_maneuverability')
-            
         return key_factors
 
     def _analyze_forces(self, friendly: Dict, enemy: Dict) -> Dict:
