@@ -4,6 +4,7 @@ import DefenseStatus from "./DefenseStatus";
 import ActionCenter from "./ActionCenter";
 import WebSocketManager from "./WebSocketManager";
 import { fetchStatus } from "../api/api";
+import GaiusChat from "./GaiusChat";
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState({
@@ -33,14 +34,16 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <h1 className="text-3xl font-bold mb-6">Gaius Command Center</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <ThreatMonitor data={dashboardData.threat_landscape} />
         <DefenseStatus data={dashboardData.defense_status} />
         <ActionCenter data={dashboardData.gaius_insights} />
       </div>
+      <GaiusChat data={dashboardData} />
       <WebSocketManager onUpdate={handleWebSocketUpdate} />
     </div>
   );
+
 };
 
 export default Dashboard;

@@ -1,7 +1,7 @@
 from typing import Dict, List
 import subprocess
 import re
-from .gaius_core import GaiusGeneral
+from gaius_core import GaiusGeneral
 
 
 class SecurityToolsInterface:

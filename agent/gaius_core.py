@@ -1,5 +1,6 @@
 from typing import Dict, List
 from enum import Enum
+from openai import OpenAI
 
 class ThreatLevel(Enum):
     LOW = 1
@@ -7,11 +8,11 @@ class ThreatLevel(Enum):
     HHIGH = 3
     CRITICAL = 4
     
-    
 class GaiusGeneral:
     def __init__(self):
         self.name = "Gaius Julius Caesar"
         self.title = "Imperator"
+        self.openai_client = OpenAI()
         
         # Core strategic principles
         self.strategic_principles = {
@@ -69,12 +70,31 @@ class GaiusGeneral:
             }
         }
 
-    def evaluate_situation(self, context):
-        """
-        Analyzes situation using Caesar's strategic principles
-        Returns strategic assessment and recommended actions
-        """
-        pass
+    def evaluate_situation(self, context: Dict) -> Dict:
+        # Get initial assessment using existing military principles
+        base_assessment = self._perform_base_assessment(context)
+        
+        # Enhance with LLM strategic analysis
+        llm_enhanced_assessment = self._enhance_with_llm(
+            base_assessment,
+            self.strategic_principles,
+            context
+        )
+        
+        return llm_enhanced_assessment
+
+    def _enhance_with_llm(self, base_assessment: Dict, principles: Dict, context: Dict) -> Dict:
+        prompt = self._construct_strategic_prompt(base_assessment, principles, context)
+        
+        response = self.openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are Gaius Julius Caesar's strategic AI advisor"},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        
+        return self._merge_assessments(base_assessment, response.choices[0].message.content)
 
     def formulate_strategy(self, assessment):
         """
@@ -90,7 +110,7 @@ class GaiusGeneral:
         """
         pass
     
-    def evaluate_situation(self, context: Dict) -> Dict:
+    def _perform_base_assessment(self, context: Dict) -> Dict:
         """
         Caesar's systematic approach to situation analysis
         Returns detailed strategic assessment
@@ -112,6 +132,8 @@ class GaiusGeneral:
             context.get('friendly_forces', {}),
             context.get('enemy_forces', {})
         )
+        assessment['threat_level'] = self._determine_threat_level(force_analysis)
+        return assessment
         assessment['threat_level'] = self._determine_threat_level(force_analysis)
         
         # 3. Strategic Opportunities (Caesar's opportunity spotting)

@@ -1,6 +1,6 @@
 from typing import Dict, List
-from .security_tools import SecurityToolsInterface
-from .gaius_core import GaiusGeneral
+from security_tools import SecurityToolsInterface
+from gaius_core import GaiusGeneral
 
 class CommandInterface:
     def __init__(self, gaius: GaiusGeneral, security_tools: SecurityToolsInterface):

@@ -1,14 +1,24 @@
 from fastapi import FastAPI, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from typing import List, Dict
 import asyncio
-from .gaius_core import GaiusGeneral
-from .security_tools import SecurityToolsInterface
-from .commander import CommandInterface
+from gaius_core import GaiusGeneral
+from security_tools import SecurityToolsInterface
+from commander import CommandInterface
 
 class GaiusDashboard:
     def __init__(self):
         self.app = FastAPI(title="Gaius Command Center")
+                # Add CORS middleware
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["http://localhost:5173"],  # React dev server
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+        
         self.active_connections: List[WebSocket] = []
         self.gaius = GaiusGeneral()
         self.security_tools = SecurityToolsInterface(self.gaius)
@@ -131,3 +141,23 @@ class GaiusDashboard:
                 "automated": False
             }
         ]
+
+@self.app.websocket("/ws/chat")
+async def chat_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            message = await websocket.receive_text()
+            
+            # Get Gaius's strategic response
+            response = self.gaius.evaluate_situation({
+                "chat_message": message,
+                "current_context": self.security_tools.get_defense_capabilities()
+            })
+            
+            await websocket.send_json({
+                "type": "chat",
+                "content": response
+            })
+    except:
+        await websocket.close()
