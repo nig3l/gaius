@@ -1,3 +1,4 @@
+import os
 from typing import Dict, List
 from enum import Enum
 from openai import OpenAI
@@ -12,7 +13,9 @@ class GaiusGeneral:
     def __init__(self):
         self.name = "Gaius Julius Caesar"
         self.title = "Imperator"
-        self.openai_client = OpenAI()
+        # OpenAI API key from environment variable
+        openai_api_key = os.environ.get("OPENAI_API_KEY")
+        self.openai_client = OpenAI(api_key=openai_api_key)
         
         # Core strategic principles
         self.strategic_principles = {
@@ -71,29 +74,23 @@ class GaiusGeneral:
         }
 
     def evaluate_situation(self, context: Dict) -> Dict:
-        # Get initial assessment using existing military principles
         base_assessment = self._perform_base_assessment(context)
-        
-        # Enhance with LLM strategic analysis
         llm_enhanced_assessment = self._enhance_with_llm(
             base_assessment,
             self.strategic_principles,
             context
         )
-        
         return llm_enhanced_assessment
 
     def _enhance_with_llm(self, base_assessment: Dict, principles: Dict, context: Dict) -> Dict:
         prompt = self._construct_strategic_prompt(base_assessment, principles, context)
-        
         response = self.openai_client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are Gaius Julius Caesar's strategic AI advisor"},
+                {"role": "system", "content": "You are Gaius Julius Caesar's strategic AI advisor. Respond as Caesar would, using historical context and an authoritative, classical tone."},
                 {"role": "user", "content": prompt}
             ]
         )
-        
         return self._merge_assessments(base_assessment, response.choices[0].message.content)
 
     def formulate_strategy(self, assessment):
