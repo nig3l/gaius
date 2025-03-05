@@ -10,10 +10,9 @@ from commander import CommandInterface
 class GaiusDashboard:
     def __init__(self):
         self.app = FastAPI(title="Gaius Command Center")
-                # Add CORS middleware
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["http://localhost:5173"],  # React dev server
+            allow_origins=["http://localhost:5173"],
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
@@ -24,30 +23,15 @@ class GaiusDashboard:
         self.security_tools = SecurityToolsInterface(self.gaius)
         self.commander = CommandInterface(self.gaius, self.security_tools)
         
-        # Mount static files for frontend
+        # Mount static files if needed (or comment out if directory doesn't exist)
         self.app.mount("/static", StaticFiles(directory="static"), name="static")
         
-        # Dashboard components
-        self.dashboard_sections = {
-            "threat_monitor": {
-                "title": "Active Threats",
-                "refresh_rate": 30,  # seconds
-                "alert_threshold": "MEDIUM"
-            },
-            "defense_status": {
-                "title": "Defense Readiness",
-                "components": ["ids", "firewall", "endpoints"],
-                "health_indicators": True
-            },
-            "action_center": {
-                "title": "Recommended Actions",
-                "priority_levels": ["critical", "high", "medium", "low"],
-                "auto_refresh": True
-            }
-        }
-
         self._setup_routes()
-
+        
+        # Register websocket routes on startup
+        @self.app.on_event("startup")
+        async def startup_event():
+            await self._setup_websocket_routes()
     def _setup_routes(self):
         """Setup dashboard API endpoints"""
         @self.app.get("/status")
@@ -142,22 +126,41 @@ class GaiusDashboard:
             }
         ]
 
-@self.app.websocket("/ws/chat")
-async def chat_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        while True:
-            message = await websocket.receive_text()
-            
-            # Get Gaius's strategic response
-            response = self.gaius.evaluate_situation({
-                "chat_message": message,
-                "current_context": self.security_tools.get_defense_capabilities()
-            })
-            
-            await websocket.send_json({
-                "type": "chat",
-                "content": response
-            })
-    except:
-        await websocket.close()
+async def chat_endpoint(self, websocket: WebSocket):
+    @self.app.websocket("/ws/chat")
+    async def websocket_endpoint(websocket: WebSocket):
+        await websocket.accept()
+        try:
+            while True:
+                message = await websocket.receive_text()
+                
+                # Get Gaius's strategic response
+                response = self.gaius.evaluate_situation({
+                    "chat_message": message,
+                    "current_context": self.security_tools.get_defense_capabilities()
+                })
+                
+                await websocket.send_json({
+                    "type": "chat",
+                    "content": response
+                })
+        except:
+            await websocket.close()
+
+def _calculate_threat_trend(self):
+    return {"trend": "increasing", "rate": 0.15}
+
+def _identify_security_hotspots(self):
+    return ["network_perimeter", "user_endpoints"]
+
+def _get_active_defenses(self):
+    return ["ids", "firewall", "endpoint_protection"]
+
+def _get_resource_metrics(self):
+    return {"cpu": 45, "memory": 60, "storage": 30}
+
+def _calculate_risk_metrics(self):
+    return {"overall": "medium", "critical_assets": "low"}
+
+def _execute_action(self, action_id: str):
+    return {"status": "success", "message": f"Action {action_id} executed"}
