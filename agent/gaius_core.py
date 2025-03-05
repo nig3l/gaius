@@ -130,8 +130,6 @@ class GaiusGeneral:
             context.get('enemy_forces', {})
         )
         assessment['threat_level'] = self._determine_threat_level(force_analysis)
-        return assessment
-        assessment['threat_level'] = self._determine_threat_level(force_analysis)
         
         # 3. Strategic Opportunities (Caesar's opportunity spotting)
         opportunities = self._identify_opportunities(context, force_analysis)
