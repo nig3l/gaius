@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { fetchStatus } from "../api/api";
+import { fetchStatus } from "../../api/api";
 import ThreatMonitor from './ThreatMonitor';
-import WebSocketManager from './WebSocketManager';
+import WebSocketManager from '../communication/WebSocketManager';
 
 const ThreatAnalysis = () => {
   const [threatData, setThreatData] = useState({

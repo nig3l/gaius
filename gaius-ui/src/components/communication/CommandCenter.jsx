@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { fetchStatus } from "../api/api";
+import { fetchStatus } from "../../api/api";
 import GaiusChat from './GaiusChat';
 import ActionCenter from './ActionCenter';
 import WebSocketManager from './WebSocketManager';

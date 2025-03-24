@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import ThreatMonitor from "./ThreatMonitor";
+import ThreatMonitor from "../monitoring/ThreatMonitor";
 import DefenseStatus from "./DefenseStatus";
-import ActionCenter from "./ActionCenter";
-import WebSocketManager from "./WebSocketManager";
-import { fetchStatus } from "../api/api";
-import GaiusChat from "./GaiusChat";
+import ActionCenter from "../ActionCenter";
+import WebSocketManager from "../communication/WebSocketManager";
+import { fetchStatus } from "../../api/api";
+import GaiusChat from "../communication/GaiusChat";
 import { motion } from "framer-motion";
 import { RadarChart, ThreatTimeline, RiskHeatmap } from "./charts";
 import { HexagonBackground } from "./effects";

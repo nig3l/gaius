@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { fetchStatus } from "../api/api";
+import { fetchStatus } from "../../api/api";
 import DefenseStatus from './DefenseStatus';
-import WebSocketManager from './WebSocketManager';
+import WebSocketManager from '../communication/WebSocketManager';
 
 const DefenseMatrix = () => {
   const [defenseData, setDefenseData] = useState({
