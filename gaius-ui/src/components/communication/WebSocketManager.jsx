@@ -64,15 +64,19 @@ const WebSocketManager = ({ onUpdate }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="fixed bottom-6 left-6 bg-gray-900/80 backdrop-blur-sm rounded-lg border border-cyan-500/30 p-3 z-50"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900/80 backdrop-blur-sm rounded-lg border border-cyan-500/30 p-3 z-50"
         >
           <div className="flex items-center gap-3">
             <div className={`h-3 w-3 rounded-full ${getStatusColor()}`}></div>
-            <span className="text-white capitalize">
+            <span className={`font-medium ${
+              status === 'connected' ? 'text-green-400' :
+              status === 'connecting' ? 'text-yellow-400' :
+              'text-red-400'
+            }`}>
               {status === 'connected' ? 'Connected to Gaius Command Network' :
                status === 'connecting' ? 'Establishing connection...' :
-               status === 'disconnected' ? 'Connection lost. Reconnecting...' :
-               'Connection error. Retrying...'}
+               status === 'disconnected' ? '⚠️ Connection lost. Reconnecting...' :
+               '⚠️ Connection error. Retrying...'}
             </span>
           </div>
         </motion.div>
