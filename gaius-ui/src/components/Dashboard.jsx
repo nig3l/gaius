@@ -5,6 +5,9 @@ import ActionCenter from "./ActionCenter";
 import WebSocketManager from "./WebSocketManager";
 import { fetchStatus } from "../api/api";
 import GaiusChat from "./GaiusChat";
+import { motion } from "framer-motion";
+import { RadarChart, ThreatTimeline, RiskHeatmap } from "./charts";
+import { HexagonBackground } from "./effects";
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState({
@@ -32,18 +35,70 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-6">
-      <h1 className="text-3xl font-bold mb-6">Gaius Command Center</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <ThreatMonitor data={dashboardData.threat_landscape} />
-        <DefenseStatus data={dashboardData.defense_status} />
-        <ActionCenter data={dashboardData.gaius_insights} />
-      </div>
-      <GaiusChat data={dashboardData} />
-      <WebSocketManager onUpdate={handleWebSocketUpdate} />
+    <div className="min-h-screen bg-black text-cyan-400">
+      <HexagonBackground />
+      
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="relative z-10 p-8"
+      >
+        <header className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-5xl font-rem bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
+              GAIUS DEFENSE MATRIX
+            </h1>
+            <p className="text-cyan-600">Advanced Cybersecurity Command Interface</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <SystemStatus />
+            <TimeDisplay />
+          </div>
+        </header>
+
+        <div className="grid grid-cols-12 gap-6">
+          <motion.div 
+            className="col-span-8"
+            initial={{ y: 20 }}
+            animate={{ y: 0 }}
+          >
+            <ThreatTimeline data={dashboardData.charts.threat_timeline} />
+          </motion.div>
+          
+          <motion.div 
+            className="col-span-4"
+            initial={{ y: 20 }}
+            animate={{ y: 0 }}
+          >
+            <RadarChart data={dashboardData.charts.defense_radar} />
+          </motion.div>
+
+          <motion.div 
+            className="col-span-6"
+            initial={{ y: 20 }}
+            animate={{ y: 0 }}
+          >
+            <RiskHeatmap data={dashboardData.charts.risk_heatmap} />
+          </motion.div>
+
+          <motion.div 
+            className="col-span-6"
+            initial={{ y: 20 }}
+            animate={{ y: 0 }}
+          >
+            <GaiusChat />
+          </motion.div>
+        </div>
+
+        <motion.div 
+          className="fixed bottom-8 right-8"
+          whileHover={{ scale: 1.05 }}
+        >
+          <ActionCenter data={dashboardData.gaius_insights} />
+        </motion.div>
+      </motion.div>
     </div>
   );
-
 };
 
 export default Dashboard;
