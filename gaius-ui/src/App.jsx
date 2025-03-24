@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Navigation } from './components/layouts';
+import { Navigation, ScrollToTop } from './components/layouts';
 import { Dashboard } from './components/dashboards';
 import { DefenseMatrix } from './components/dashboards';
 import { ThreatAnalysis } from './components/monitoring';
@@ -8,6 +8,7 @@ import { CommandCenter } from './components/communication';
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <div className="min-h-screen bg-black">
         <Navigation />
         <Routes>

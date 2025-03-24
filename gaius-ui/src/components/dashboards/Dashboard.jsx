@@ -38,6 +38,11 @@ const Dashboard = () => {
     loadInitialData();
   }, []);
 
+  // Add useEffect for scroll behavior
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Handle WebSocket updates
   const handleWebSocketUpdate = (data) => {
     setDashboardData(data);
