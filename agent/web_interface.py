@@ -1,8 +1,10 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, HTTPException, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from typing import List, Dict
 import asyncio
+import logging
+from datetime import datetime
 from gaius_core import GaiusGeneral
 from security_tools import SecurityToolsInterface
 from commander import CommandInterface
@@ -36,11 +38,24 @@ class GaiusDashboard:
         """Setup dashboard API endpoints"""
         @self.app.get("/status")
         async def get_security_status():
-            return {
-                "current_posture": self.security_tools.get_defense_status({}),
-                "active_threats": self.commander.analyze_current_threats({}),
-                "gaius_recommendations": self._get_actionable_items()
-            }
+            try:
+                defense_status = self.security_tools.get_defense_capabilities()
+                threats = self.commander.analyze_current_threats({})
+                
+                return {
+                    "current_posture": {
+                        "defense_capabilities": defense_status,
+                        "active_systems": self.security_tools._get_active_systems()
+                    },
+                    "active_threats": threats,
+                    "gaius_recommendations": self._get_actionable_items(),
+                    "threat_timeline": self._format_timeline_data(),
+                    "defense_radar": self._format_radar_data(defense_status),
+                    "risk_heatmap": self._format_risk_heatmap_data()
+                }
+            except Exception as e:
+                logging.error(f"Error getting status: {e}")
+                raise HTTPException(status_code=500, detail="Internal server error")
 
         @self.app.post("/action/{action_id}")
         async def execute_recommendation(action_id: str):
@@ -54,12 +69,22 @@ class GaiusDashboard:
             self.active_connections.append(websocket)
             try:
                 while True:
-                    # Real-time updates
-                    dashboard_data = self._get_dashboard_updates()
-                    await websocket.send_json(dashboard_data)
-                    await asyncio.sleep(5)
-            except:
-                self.active_connections.remove(websocket)
+                    try:
+                        dashboard_data = self._get_dashboard_updates()
+                        await websocket.send_json(dashboard_data)
+                        await asyncio.sleep(5)
+                    except WebSocketDisconnect:
+                        self.active_connections.remove(websocket)
+                        break
+                    except Exception as e:
+                        logging.error(f"WebSocket error: {e}")
+                        await websocket.send_json({
+                            "error": "Internal server error",
+                            "timestamp": datetime.now().isoformat()
+                        })
+            finally:
+                if websocket in self.active_connections:
+                    self.active_connections.remove(websocket)
 
     def _get_dashboard_updates(self) -> Dict:
         """Get real-time dashboard data"""
@@ -164,3 +189,36 @@ def _calculate_risk_metrics(self):
 
 def _execute_action(self, action_id: str):
     return {"status": "success", "message": f"Action {action_id} executed"}
+
+def _format_timeline_data(self) -> Dict:
+    """Format threat timeline data for frontend"""
+    try:
+        current_time = datetime.now()
+        return {
+            "labels": [(current_time - timedelta(hours=x)).strftime("%H:%M") 
+                      for x in range(6, -1, -1)],
+            "values": self.security_tools.get_threat_metrics()["hourly_threats"],
+            "mitigated": self.security_tools.get_threat_metrics()["hourly_mitigated"]
+        }
+    except Exception as e:
+        logging.error(f"Error formatting timeline data: {e}")
+        return {"labels": [], "values": [], "mitigated": []}
+
+def _format_radar_data(self, defense_status: Dict) -> Dict:
+    """Format defense capabilities for radar chart"""
+    try:
+        return {
+            "labels": ["Firewall", "IDS/IPS", "Encryption", "Authentication", 
+                      "Monitoring", "Backup"],
+            "values": [
+                defense_status.get("firewall", 0),
+                defense_status.get("ids", 0),
+                defense_status.get("encryption", 0),
+                defense_status.get("authentication", 0),
+                defense_status.get("monitoring", 0),
+                defense_status.get("backup", 0)
+            ]
+        }
+    except Exception as e:
+        logging.error(f"Error formatting radar data: {e}")
+        return {"labels": [], "values": []}

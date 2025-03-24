@@ -232,4 +232,30 @@ class GaiusGeneral:
             selected_principles.append('intelligence_network')
             
         return selected_principles
-    
+
+    def _construct_strategic_prompt(self, base_assessment: Dict, principles: Dict, context: Dict) -> str:
+        """Constructs prompt for LLM strategic enhancement"""
+        return f"""
+        Initial Assessment:
+        - Threat Level: {base_assessment['threat_level']}
+        - Key Factors: {', '.join(base_assessment['key_factors'])}
+        - Opportunities: {', '.join(base_assessment['opportunities'])}
+        
+        Given this situation, formulate a strategic response considering:
+        1. Immediate defensive actions
+        2. Resource allocation
+        3. Long-term strategic positioning
+        4. Risk mitigation measures
+        """
+
+    def _merge_assessments(self, base_assessment: Dict, llm_response: str) -> Dict:
+        """Merges base assessment with LLM insights"""
+        try:
+            return {
+                **base_assessment,
+                "ai_insights": llm_response,
+                "timestamp": datetime.now().isoformat()
+            }
+        except Exception as e:
+            logging.error(f"Error merging assessments: {e}")
+            return base_assessment

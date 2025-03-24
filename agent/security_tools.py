@@ -114,3 +114,40 @@ class SecurityToolsInterface:
             "mobility": 0.7,  # Default assumption for attacker mobility
             "supplies": 0.8   # Default assumption for attacker resources
         }
+
+    def get_threat_metrics(self) -> Dict:
+        """Get hourly threat metrics"""
+        return {
+            "hourly_threats": [self._count_threats_in_hour(hour) for hour in range(7)],
+            "hourly_mitigated": [self._count_mitigated_in_hour(hour) for hour in range(7)]
+        }
+
+    def _get_active_systems(self) -> List[Dict]:
+        """Get status of all defense systems"""
+        return [
+            {
+                "name": "Intrusion Detection",
+                "status": "active",
+                "description": "Real-time network monitoring"
+            },
+            {
+                "name": "Firewall",
+                "status": "active",
+                "description": "Perimeter defense"
+            },
+            {
+                "name": "Endpoint Protection",
+                "status": "active",
+                "description": "Device security"
+            }
+        ]
+
+    def _count_threats_in_hour(self, hour: int) -> int:
+        """Count threats detected in specific hour"""
+        # Implementation needed
+        return 0
+
+    def _count_mitigated_in_hour(self, hour: int) -> int:
+        """Count threats mitigated in specific hour"""
+        # Implementation needed
+        return 0
