@@ -50,7 +50,6 @@ const Dashboard = () => {
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        
         className="relative z-10 p-8 pl-28"  
       >
         <header className="flex justify-between items-center mb-8 mt-16"> 
@@ -66,7 +65,6 @@ const Dashboard = () => {
           </div>
         </header>
 
-        
         <div className="max-w-[1920px] mx-auto">
           <div className="grid grid-cols-12 gap-8"> 
             <motion.div 
@@ -88,7 +86,7 @@ const Dashboard = () => {
             </motion.div>
 
             <motion.div 
-              className="col-span-5" // Changed from 6
+              className="col-span-5"
               initial={{ y: 20 }}
               animate={{ y: 0 }}
               transition={{ delay: 0.3 }}
@@ -97,7 +95,7 @@ const Dashboard = () => {
             </motion.div>
 
             <motion.div 
-              className="col-span-7" // Changed from 6
+              className="col-span-7"
               initial={{ y: 20 }}
               animate={{ y: 0 }}
               transition={{ delay: 0.4 }}
@@ -107,12 +105,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <motion.div 
-          className="fixed bottom-8 right-8 z-50" 
-          whileHover={{ scale: 1.05 }}
-        >
-          <ActionCenter data={dashboardData.gaius_insights} />
-        </motion.div>
       </motion.div>
     </div>
   );
