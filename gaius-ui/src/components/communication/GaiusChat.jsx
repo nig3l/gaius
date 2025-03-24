@@ -21,13 +21,13 @@ const GaiusChat = ({ data }) => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-cyan-500/20 h-[500px]"
+      className="bg-gray-900/40 backdrop-blur-xl rounded-2xl border border-cyan-500/20 flex flex-col h-[500px]" // Add flex and fixed height
     >
       <div className="p-4 border-b border-cyan-500/20">
         <h2 className="text-xl font-rem text-cyan-400">Strategic Command Interface</h2>
       </div>
       
-      <div className="h-[400px] overflow-auto p-4 space-y-4">
+      <div className="flex-1 overflow-auto p-4 space-y-4"> {/* Change to flex-1 */}
         {messages.map((msg, idx) => (
           <motion.div
             initial={{ x: msg.sender === 'Gaius' ? -20 : 20, opacity: 0 }}
@@ -53,7 +53,8 @@ const GaiusChat = ({ data }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 border-t border-cyan-500/20">
+      {/* Move input section up by adding border-t */}
+      <div className="p-4 border-t border-cyan-500/20 mt-auto"> {/* Add mt-auto */}
         <div className="flex gap-2">
           <input
             type="text"

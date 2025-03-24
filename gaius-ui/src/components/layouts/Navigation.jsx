@@ -17,7 +17,7 @@ const Navigation = () => {
     <motion.nav
       initial={{ opacity: 0, x: -50 }}
       animate={{ opacity: 1, x: 0 }}
-      className={`fixed left-0 top-0 h-screen z-50 transition-all duration-300 ${
+      className={`fixed left-0 top-0 h-screen z-[100] transition-all duration-300 ${
         isExpanded ? 'w-64' : 'w-20'
       } bg-gray-900/80 backdrop-blur-xl border-r border-cyan-500/20`}
     >

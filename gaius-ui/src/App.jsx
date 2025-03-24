@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Dashboard from "./components/Dashboard";
-import DefenseMatrix from "./components/DefenseMatrix";
-import ThreatAnalysis from "./components/ThreatAnalysis";
-import CommandCenter from "./components/CommandCenter";
+import { Navigation } from './components/layouts';
+import { Dashboard } from './components/dashboards';
+import { DefenseMatrix } from './components/dashboards';
+import { ThreatAnalysis } from './components/monitoring';
+import { CommandCenter } from './components/communication';
 
 function App() {
   return (

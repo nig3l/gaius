@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { executeAction } from "../api/api";
+import { executeAction } from "../../api/api";
 
 const ActionCenter = ({ data }) => {
   const [activeAction, setActiveAction] = useState(null);
