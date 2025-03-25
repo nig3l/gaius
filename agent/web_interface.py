@@ -118,19 +118,18 @@ class GaiusDashboard:
                             timeout=10.0
                         )
                         
+                        # Ensure we have a valid response
+                        if not response or "ai_insights" not in response:
+                            response = {
+                                "ai_insights": "Ave! I apologize for the delay in my response. Please restate your query."
+                            }
+                        
                         # Format the response
                         chat_response = {
                             "type": "chat",
-                            "content": response.get("ai_insights", "Ave! I shall provide a strategic response."),
+                            "content": response["ai_insights"],
                             "timestamp": datetime.now().isoformat()
                         }
-                        
-                        if isinstance(chat_response["content"], dict):
-                            # Handle mock response format
-                            if "choices" in chat_response["content"]:
-                                chat_response["content"] = chat_response["content"]["choices"][0]["message"]["content"]
-                            else:
-                                chat_response["content"] = str(chat_response["content"])
                         
                         await websocket.send_json(chat_response)
                         

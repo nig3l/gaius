@@ -87,22 +87,23 @@ class GaiusGeneral:
             }
         }
 
-    def evaluate_situation(self, context: Dict) -> Dict:
+    async def evaluate_situation(self, context: Dict) -> Dict:
+        """Made async to work with FastAPI websockets"""
         base_assessment = self._perform_base_assessment(context)
-        llm_enhanced_assessment = self._enhance_with_llm(
+        llm_enhanced_assessment = await self._enhance_with_llm(
             base_assessment,
             self.strategic_principles,
             context
         )
         return llm_enhanced_assessment
 
-    def _enhance_with_llm(self, base_assessment: Dict, principles: Dict, context: Dict) -> Dict:
-        """Modified to use Deepseek's model with fallback responses"""
+    async def _enhance_with_llm(self, base_assessment: Dict, principles: Dict, context: Dict) -> Dict:
+        """Modified to use async/await with proper error handling"""
         try:
             if "chat_message" in context:
                 try:
                     # Attempt to use Deepseek API
-                    response = self.openai_client.chat.completions.create(
+                    response = await self.openai_client.chat.completions.create(
                         model="deepseek-chat",
                         messages=[
                             {
@@ -121,28 +122,43 @@ class GaiusGeneral:
                     
                 except Exception as api_error:
                     logging.error(f"Deepseek API error: {api_error}")
-                    # Fallback to predetermined responses
-                    responses = {
-                        "greeting": "Ave! I stand ready to assist with your strategic needs.",
-                        "status": "Our defenses are holding strong. What intelligence do you seek?",
-                        "error": "A temporary setback in our communication lines. Please restate your query.",
-                    }
-                    
+                    # Enhanced fallback responses
                     msg = context["chat_message"].lower()
-                    if "hello" in msg or "hi" in msg:
-                        response_text = responses["greeting"]
-                    elif "status" in msg:
-                        response_text = responses["status"]
-                    else:
-                        response_text = responses["error"]
-                        
+                    response_text = self._get_fallback_response(msg)
                     return self._merge_assessments(base_assessment, response_text)
                     
             return base_assessment
             
         except Exception as e:
             logging.error(f"Error in LLM enhancement: {e}")
-            return base_assessment
+            return self._merge_assessments(base_assessment, "Ave! I am currently regrouping my thoughts. Please try again shortly.")
+
+    def _get_fallback_response(self, msg: str) -> str:
+        """Enhanced fallback response system"""
+        responses = {
+            "greeting": [
+                "Ave! I stand ready to assist with your strategic needs.",
+                "Greetings, Commander. How may I be of service today?",
+                "Welcome to the command center. What intelligence do you seek?"
+            ],
+            "status": [
+                "Our defenses are holding strong. What specific information do you require?",
+                "Current defensive posture is stable. Key systems are operational.",
+                "All defensive positions are maintaining vigilance."
+            ],
+            "default": [
+                "I am analyzing the situation and will provide strategic guidance shortly.",
+                "Your query requires careful tactical consideration. Please proceed.",
+                "I shall provide a detailed assessment once I have gathered more intelligence."
+            ]
+        }
+
+        import random
+        if any(word in msg for word in ["hello", "hi", "greetings", "ave"]):
+            return random.choice(responses["greeting"])
+        elif any(word in msg for word in ["status", "report", "update"]):
+            return random.choice(responses["status"])
+        return random.choice(responses["default"])
 
     def formulate_strategy(self, assessment):
         """
