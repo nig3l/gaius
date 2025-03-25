@@ -6,24 +6,30 @@ from datetime import datetime
 from enum import Enum
 from openai import OpenAI
 
-# environment variables
+# Load environment variables
 load_dotenv()
 
 class ThreatLevel(Enum):
     LOW = 1
-    MEDIUM = 2
-    HHIGH = 3
+    MEDIUM = 2 
+    HIGH = 3
     CRITICAL = 4
-    
+
 class GaiusGeneral:
     def __init__(self):
         self.name = "Gaius Julius Caesar"
         self.title = "Imperator"
-        # OpenAI API key from environment variable
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if not openai_api_key:
-            raise ValueError("OPENAI_API_KEY not found in environment variables")
-        self.openai_client = OpenAI(api_key=openai_api_key)
+        
+        #  Deepseek API key from environment variable
+        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
+        if not deepseek_api_key:
+            raise ValueError("DEEPSEEK_API_KEY not found in environment variables")
+            
+        # Initialize API client with Deepseek endpoint and key
+        self.openai_client = OpenAI(
+            api_key=deepseek_api_key,
+            base_url="https://api.deepseek.com/v1"
+        )
         
         # Core strategic principles
         self.strategic_principles = {
@@ -81,25 +87,78 @@ class GaiusGeneral:
             }
         }
 
-    def evaluate_situation(self, context: Dict) -> Dict:
+    async def evaluate_situation(self, context: Dict) -> Dict:
+        """Made async to work with FastAPI websockets"""
         base_assessment = self._perform_base_assessment(context)
-        llm_enhanced_assessment = self._enhance_with_llm(
+        llm_enhanced_assessment = await self._enhance_with_llm(
             base_assessment,
             self.strategic_principles,
             context
         )
         return llm_enhanced_assessment
 
-    def _enhance_with_llm(self, base_assessment: Dict, principles: Dict, context: Dict) -> Dict:
-        prompt = self._construct_strategic_prompt(base_assessment, principles, context)
-        response = self.openai_client.chat.completions.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are Gaius Julius Caesar's strategic AI advisor. Respond as Caesar would, using historical context and an authoritative, classical tone."},
-                {"role": "user", "content": prompt}
+    async def _enhance_with_llm(self, base_assessment: Dict, principles: Dict, context: Dict) -> Dict:
+        """Modified to use async/await with proper error handling"""
+        try:
+            if "chat_message" in context:
+                try:
+                    # Attempt to use Deepseek API
+                    response = await self.openai_client.chat.completions.create(
+                        model="deepseek-chat",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are Gaius Julius Caesar's strategic AI advisor. Respond as Caesar would."
+                            },
+                            {
+                                "role": "user",
+                                "content": context["chat_message"]
+                            }
+                        ],
+                        temperature=0.7,
+                        max_tokens=500
+                    )
+                    return self._merge_assessments(base_assessment, response.choices[0].message.content)
+                    
+                except Exception as api_error:
+                    logging.error(f"Deepseek API error: {api_error}")
+                    # Enhanced fallback responses
+                    msg = context["chat_message"].lower()
+                    response_text = self._get_fallback_response(msg)
+                    return self._merge_assessments(base_assessment, response_text)
+                    
+            return base_assessment
+            
+        except Exception as e:
+            logging.error(f"Error in LLM enhancement: {e}")
+            return self._merge_assessments(base_assessment, "Ave! I am currently regrouping my thoughts. Please try again shortly.")
+
+    def _get_fallback_response(self, msg: str) -> str:
+        """Enhanced fallback response system"""
+        responses = {
+            "greeting": [
+                "Ave! I stand ready to assist with your strategic needs.",
+                "Greetings, Commander. How may I be of service today?",
+                "Welcome to the command center. What intelligence do you seek?"
+            ],
+            "status": [
+                "Our defenses are holding strong. What specific information do you require?",
+                "Current defensive posture is stable. Key systems are operational.",
+                "All defensive positions are maintaining vigilance."
+            ],
+            "default": [
+                "I am analyzing the situation and will provide strategic guidance shortly.",
+                "Your query requires careful tactical consideration. Please proceed.",
+                "I shall provide a detailed assessment once I have gathered more intelligence."
             ]
-        )
-        return self._merge_assessments(base_assessment, response.choices[0].message.content)
+        }
+
+        import random
+        if any(word in msg for word in ["hello", "hi", "greetings", "ave"]):
+            return random.choice(responses["greeting"])
+        elif any(word in msg for word in ["status", "report", "update"]):
+            return random.choice(responses["status"])
+        return random.choice(responses["default"])
 
     def formulate_strategy(self, assessment):
         """
@@ -179,7 +238,7 @@ class GaiusGeneral:
     
         # Failover Systems (Exit Routes)
         failover = network_topology.get('failover_systems', {})
-        if failover.get('backup_sites') < 2:
+        if failover.get('backup_sites', 0) < 2:
             key_factors.append('limited_failover_options')
         if failover.get('disaster_recovery'):
             key_factors.append('recovery_capability')

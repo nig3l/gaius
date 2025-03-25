@@ -1,3 +1,4 @@
+import traceback
 from fastapi import FastAPI, WebSocket, HTTPException, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -8,6 +9,16 @@ from datetime import datetime, timedelta
 from gaius_core import GaiusGeneral
 from security_tools import SecurityToolsInterface
 from commander import CommandInterface
+
+def log_error(error: Exception, context: str = ""):
+    """Enhanced error logging"""
+    logging.error(f"""
+    Error in {context}:
+    Type: {type(error).__name__}
+    Message: {str(error)}
+    Traceback:
+    {traceback.format_exc()}
+    """)
 
 class GaiusDashboard:
     def __init__(self):
@@ -30,7 +41,7 @@ class GaiusDashboard:
         
         self._setup_routes()
         
-        # Register websocket routes on startup
+        # Registering websocket routes on startup
         @self.app.on_event("startup")
         async def startup_event():
             await self._setup_websocket_routes()
@@ -40,9 +51,14 @@ class GaiusDashboard:
         @self.app.get("/status")
         async def get_security_status():
             try:
+                logging.info("Fetching defense capabilities...")
                 defense_status = self.security_tools.get_defense_capabilities()
+                logging.info(f"Defense capabilities: {defense_status}")
+
+                logging.info("Analyzing current threats...")
                 threats = self.commander.analyze_current_threats({})
-                
+                logging.info(f"Threats: {threats}")
+
                 return {
                     "current_posture": {
                         "defense_capabilities": defense_status,
@@ -55,7 +71,7 @@ class GaiusDashboard:
                     "risk_heatmap": self._format_risk_heatmap_data()
                 }
             except Exception as e:
-                logging.error(f"Error getting status: {e}")
+                log_error(e, "/status endpoint")
                 raise HTTPException(status_code=500, detail="Internal server error")
 
         @self.app.post("/action/{action_id}")
@@ -80,7 +96,7 @@ class GaiusDashboard:
             except WebSocketDisconnect:
                 self.active_connections.remove(websocket)
             except Exception as e:
-                logging.error(f"WebSocket error: {str(e)}")
+                log_error(e, "WebSocket /ws/dashboard")
                 if websocket in self.active_connections:
                     self.active_connections.remove(websocket)
 
@@ -90,18 +106,51 @@ class GaiusDashboard:
             try:
                 while True:
                     message = await websocket.receive_text()
+                    logging.info(f"Received chat message: {message}")
                     
-                    # Get Gaius's strategic response
-                    response = self.gaius.evaluate_situation({
-                        "chat_message": message,
-                        "current_context": self.security_tools.get_defense_capabilities()
-                    })
-                    
-                    await websocket.send_json({
-                        "type": "chat",
-                        "content": response
-                    })
-            except:
+                    try:
+                        # Get Gaius's response with timeout
+                        response = await asyncio.wait_for(
+                            self.gaius.evaluate_situation({
+                                "chat_message": message,
+                                "current_context": self.security_tools.get_defense_capabilities()
+                            }),
+                            timeout=10.0
+                        )
+                        
+                        # Ensure we have a valid response
+                        if not response or "ai_insights" not in response:
+                            response = {
+                                "ai_insights": "Ave! I apologize for the delay in my response. Please restate your query."
+                            }
+                        
+                        # Format the response
+                        chat_response = {
+                            "type": "chat",
+                            "content": response["ai_insights"],
+                            "timestamp": datetime.now().isoformat()
+                        }
+                        
+                        await websocket.send_json(chat_response)
+                        
+                    except asyncio.TimeoutError:
+                        await websocket.send_json({
+                            "type": "error",
+                            "content": "Response timeout. My strategic calculations are taking longer than expected.",
+                            "timestamp": datetime.now().isoformat()
+                        })
+                    except Exception as e:
+                        log_error(e, "Chat WebSocket message processing")
+                        await websocket.send_json({
+                            "type": "error",
+                            "content": "My apologies, I encountered an error in my strategic analysis.",
+                            "timestamp": datetime.now().isoformat()
+                        })
+                        
+            except WebSocketDisconnect:
+                logging.info("Chat WebSocket disconnected")
+            except Exception as e:
+                log_error(e, "Chat WebSocket")
                 await websocket.close()
 
     def _get_dashboard_updates(self) -> Dict:
@@ -162,7 +211,7 @@ class GaiusDashboard:
                 "mitigated": self.security_tools.get_threat_metrics()["hourly_mitigated"]
             }
         except Exception as e:
-            logging.error(f"Error formatting timeline data: {e}")
+            log_error(e, "Formatting timeline data")
             return {"labels": [], "values": [], "mitigated": []}
 
     def _format_radar_data(self, defense_status: Dict) -> Dict:
@@ -181,7 +230,7 @@ class GaiusDashboard:
                 ]
             }
         except Exception as e:
-            logging.error(f"Error formatting radar data: {e}")
+            log_error(e, "Formatting radar data")
             return {"labels": [], "values": []}
 
     def _format_risk_heatmap_data(self):
