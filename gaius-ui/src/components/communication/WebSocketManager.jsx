@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const WebSocketManager = ({ onUpdate }) => {
   const [ws, setWs] = useState(null);
@@ -9,15 +9,24 @@ const WebSocketManager = ({ onUpdate }) => {
   const connect = useCallback(() => {
     setStatus('connecting');
     const websocket = new WebSocket("ws://localhost:8000/ws/dashboard");
-    setWs(websocket);
+    
+    websocket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+      setStatus('error');
+      setShowStatus(true);
+      setTimeout(() => connect(), 5000);
+    };
 
     websocket.onopen = () => {
-      console.log("WebSocket connected");
+      console.log("Connected to WebSocket");
       setStatus('connected');
       setShowStatus(true);
-      setTimeout(() => setShowStatus(false), 3000);
+      // Auto-hide after 5 seconds if connected successfully
+      setTimeout(() => setShowStatus(false), 5000);
     };
-    
+
+    setWs(websocket);
+
     websocket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       onUpdate(data);
@@ -27,14 +36,7 @@ const WebSocketManager = ({ onUpdate }) => {
       console.log("WebSocket disconnected");
       setStatus('disconnected');
       setShowStatus(true);
-      // Try to reconnect after 5 seconds
       setTimeout(() => connect(), 5000);
-    };
-
-    websocket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      setStatus('error');
-      setShowStatus(true);
     };
   }, [onUpdate]);
 
@@ -59,28 +61,35 @@ const WebSocketManager = ({ onUpdate }) => {
 
   return (
     <>
-      {showStatus && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900/80 backdrop-blur-sm rounded-lg border border-cyan-500/30 p-3 z-50"
-        >
-          <div className="flex items-center gap-3">
-            <div className={`h-3 w-3 rounded-full ${getStatusColor()}`}></div>
-            <span className={`font-medium ${
-              status === 'connected' ? 'text-green-400' :
-              status === 'connecting' ? 'text-yellow-400' :
-              'text-red-400'
-            }`}>
-              {status === 'connected' ? 'Connected to Gaius Command Network' :
-               status === 'connecting' ? 'Establishing connection...' :
-               status === 'disconnected' ? '⚠️ Connection lost. Reconnecting...' :
-               '⚠️ Connection error. Retrying...'}
-            </span>
-          </div>
-        </motion.div>
-      )}
+      <AnimatePresence>
+        {showStatus && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className="fixed top-6 right-6 bg-gray-900/80 backdrop-blur-sm rounded-lg border border-cyan-500/30 p-3 z-50"
+          >
+            <div className="flex items-center gap-3">
+              <div className={`h-3 w-3 rounded-full ${getStatusColor()}`}></div>
+              <span className={`font-medium ${
+                status === 'connected' ? 'text-green-400' :
+                status === 'connecting' ? 'text-yellow-400' :
+                'text-red-400'
+              }`}>
+                {status === 'connected' ? 'Connected to Gaius Command Network' :
+                 status === 'connecting' ? 'Establishing connection...' :
+                 status === 'disconnected' ? '⚠️ Connection lost. Reconnecting...' :
+                 '⚠️ Connection error. Retrying...'}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Always visible minimal status indicator */}
+      <div className="fixed top-4 right-4 z-50">
+        <div className={`h-2 w-2 rounded-full ${getStatusColor()}`} />
+      </div>
     </>
   );
 };

@@ -38,7 +38,7 @@ class GaiusDashboard:
     def _setup_routes(self):
         """Setup dashboard API endpoints"""
         @self.app.get("/status")
-        async def get_security_status(self):
+        async def get_security_status():
             try:
                 defense_status = self.security_tools.get_defense_capabilities()
                 threats = self.commander.analyze_current_threats({})
@@ -70,20 +70,17 @@ class GaiusDashboard:
             self.active_connections.append(websocket)
             try:
                 while True:
-                    try:
-                        dashboard_data = self._get_dashboard_updates()
-                        await websocket.send_json(dashboard_data)
-                        await asyncio.sleep(5)
-                    except WebSocketDisconnect:
-                        self.active_connections.remove(websocket)
-                        break
-                    except Exception as e:
-                        logging.error(f"WebSocket error: {e}")
-                        await websocket.send_json({
-                            "error": "Internal server error",
-                            "timestamp": datetime.now().isoformat()
-                        })
-            finally:
+                    data = {
+                        "timestamp": datetime.now().isoformat(),
+                        "status": "active",
+                        # will Add more real-time data here
+                    }
+                    await websocket.send_json(data)
+                    await asyncio.sleep(5)  # Send updates every 5 seconds
+            except WebSocketDisconnect:
+                self.active_connections.remove(websocket)
+            except Exception as e:
+                logging.error(f"WebSocket error: {str(e)}")
                 if websocket in self.active_connections:
                     self.active_connections.remove(websocket)
 
