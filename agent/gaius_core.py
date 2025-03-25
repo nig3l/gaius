@@ -6,24 +6,30 @@ from datetime import datetime
 from enum import Enum
 from openai import OpenAI
 
-# environment variables
+# Load environment variables
 load_dotenv()
 
 class ThreatLevel(Enum):
     LOW = 1
-    MEDIUM = 2
+    MEDIUM = 2 
     HIGH = 3
     CRITICAL = 4
-    
+
 class GaiusGeneral:
     def __init__(self):
         self.name = "Gaius Julius Caesar"
         self.title = "Imperator"
-        # OpenAI API key from environment variable
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if not openai_api_key:
-            raise ValueError("OPENAI_API_KEY not found in environment variables")
-        self.openai_client = OpenAI(api_key=openai_api_key)
+        
+        #  Deepseek API key from environment variable
+        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
+        if not deepseek_api_key:
+            raise ValueError("DEEPSEEK_API_KEY not found in environment variables")
+            
+        # Initialize API client with Deepseek endpoint and key
+        self.openai_client = OpenAI(
+            api_key=deepseek_api_key,
+            base_url="https://api.deepseek.com/v1"
+        )
         
         # Core strategic principles
         self.strategic_principles = {
@@ -91,15 +97,52 @@ class GaiusGeneral:
         return llm_enhanced_assessment
 
     def _enhance_with_llm(self, base_assessment: Dict, principles: Dict, context: Dict) -> Dict:
-        prompt = self._construct_strategic_prompt(base_assessment, principles, context)
-        response = self.openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",  # a model 
-            messages=[
-                {"role": "system", "content": "You are Gaius Julius Caesar's strategic AI advisor. Respond as Caesar would, using historical context and an authoritative, classical tone."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        return self._merge_assessments(base_assessment, response.choices[0].message.content)
+        """Modified to use Deepseek's model with fallback responses"""
+        try:
+            if "chat_message" in context:
+                try:
+                    # Attempt to use Deepseek API
+                    response = self.openai_client.chat.completions.create(
+                        model="deepseek-chat",
+                        messages=[
+                            {
+                                "role": "system",
+                                "content": "You are Gaius Julius Caesar's strategic AI advisor. Respond as Caesar would."
+                            },
+                            {
+                                "role": "user",
+                                "content": context["chat_message"]
+                            }
+                        ],
+                        temperature=0.7,
+                        max_tokens=500
+                    )
+                    return self._merge_assessments(base_assessment, response.choices[0].message.content)
+                    
+                except Exception as api_error:
+                    logging.error(f"Deepseek API error: {api_error}")
+                    # Fallback to predetermined responses
+                    responses = {
+                        "greeting": "Ave! I stand ready to assist with your strategic needs.",
+                        "status": "Our defenses are holding strong. What intelligence do you seek?",
+                        "error": "A temporary setback in our communication lines. Please restate your query.",
+                    }
+                    
+                    msg = context["chat_message"].lower()
+                    if "hello" in msg or "hi" in msg:
+                        response_text = responses["greeting"]
+                    elif "status" in msg:
+                        response_text = responses["status"]
+                    else:
+                        response_text = responses["error"]
+                        
+                    return self._merge_assessments(base_assessment, response_text)
+                    
+            return base_assessment
+            
+        except Exception as e:
+            logging.error(f"Error in LLM enhancement: {e}")
+            return base_assessment
 
     def formulate_strategy(self, assessment):
         """

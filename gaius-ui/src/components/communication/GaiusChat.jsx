@@ -1,5 +1,5 @@
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useState, useRef, useEffect } from 'react';
 
 const GaiusChat = ({ data }) => {
   const [messages, setMessages] = useState([{
@@ -9,7 +9,54 @@ const GaiusChat = ({ data }) => {
   }]);
   
   const [input, setInput] = useState('');
+  const [ws, setWs] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    const websocket = new WebSocket("ws://localhost:8000/ws/chat");
+    
+    websocket.onopen = () => {
+      console.log("Chat WebSocket Connected");
+      setIsConnected(true);
+    };
+
+    websocket.onmessage = (event) => {
+      const response = JSON.parse(event.data);
+      setMessages(prev => [...prev, {
+        sender: 'Gaius',
+        content: response.content,
+        timestamp: new Date(response.timestamp)
+      }]);
+    };
+
+    websocket.onclose = () => {
+      console.log("Chat WebSocket Disconnected");
+      setIsConnected(false);
+    };
+
+    setWs(websocket);
+
+    return () => {
+      if (websocket) {
+        websocket.close();
+      }
+    };
+  }, []);
+
+  const sendMessage = () => {
+    if (!input.trim() || !ws || !isConnected) return;
+
+    const userMessage = {
+      sender: 'User',
+      content: input,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    ws.send(input);
+    setInput('');
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -60,23 +107,17 @@ const GaiusChat = ({ data }) => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+            disabled={!isConnected}
             className="flex-1 bg-gray-800/50 border border-cyan-500/30 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-cyan-500"
-            placeholder="Enter command..."
+            placeholder={isConnected ? "Enter command..." : "Connecting..."}
           />
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="bg-cyan-500/20 border border-cyan-500/30 px-6 py-2 rounded-lg text-cyan-400 hover:bg-cyan-500/30"
-            onClick={() => {
-              if (input.trim()) {
-                setMessages(prev => [...prev, {
-                  sender: 'User',
-                  content: input,
-                  timestamp: new Date()
-                }]);
-                setInput('');
-              }
-            }}
+            className="bg-cyan-500/20 border border-cyan-500/30 px-6 py-2 rounded-lg text-cyan-400 hover:bg-cyan-500/30 disabled:opacity-50"
+            onClick={sendMessage}
+            disabled={!isConnected}
           >
             Send
           </motion.button>
