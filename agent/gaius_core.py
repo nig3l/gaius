@@ -1,7 +1,13 @@
 import os
+from dotenv import load_dotenv
 from typing import Dict, List
+import logging
+from datetime import datetime
 from enum import Enum
 from openai import OpenAI
+
+# environment variables
+load_dotenv()
 
 class ThreatLevel(Enum):
     LOW = 1
@@ -14,7 +20,9 @@ class GaiusGeneral:
         self.name = "Gaius Julius Caesar"
         self.title = "Imperator"
         # OpenAI API key from environment variable
-        openai_api_key = os.environ.get("OPENAI_API_KEY")
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if not openai_api_key:
+            raise ValueError("OPENAI_API_KEY not found in environment variables")
         self.openai_client = OpenAI(api_key=openai_api_key)
         
         # Core strategic principles
