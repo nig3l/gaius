@@ -12,7 +12,7 @@ load_dotenv()
 class ThreatLevel(Enum):
     LOW = 1
     MEDIUM = 2
-    HHIGH = 3
+    HIGH = 3
     CRITICAL = 4
     
 class GaiusGeneral:
@@ -93,7 +93,7 @@ class GaiusGeneral:
     def _enhance_with_llm(self, base_assessment: Dict, principles: Dict, context: Dict) -> Dict:
         prompt = self._construct_strategic_prompt(base_assessment, principles, context)
         response = self.openai_client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",  # a model 
             messages=[
                 {"role": "system", "content": "You are Gaius Julius Caesar's strategic AI advisor. Respond as Caesar would, using historical context and an authoritative, classical tone."},
                 {"role": "user", "content": prompt}
@@ -179,7 +179,7 @@ class GaiusGeneral:
     
         # Failover Systems (Exit Routes)
         failover = network_topology.get('failover_systems', {})
-        if failover.get('backup_sites') < 2:
+        if failover.get('backup_sites', 0) < 2:
             key_factors.append('limited_failover_options')
         if failover.get('disaster_recovery'):
             key_factors.append('recovery_capability')

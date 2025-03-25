@@ -1,6 +1,7 @@
 from typing import Dict, List
 import subprocess
 import re
+import logging
 from gaius_core import GaiusGeneral
 
 
@@ -16,6 +17,12 @@ class SecurityToolsInterface:
             },
             "rules_active": [],
             "detection_zones": []
+        }
+        # Initialize supported_tools with default values
+        self.supported_tools = {
+            "ids": {"connected": False},
+            "siem": {"connected": False},
+            "netflow": {"connected": False}
         }
         
     def connect_ids(self, ids_type: str, config: Dict) -> bool:
@@ -99,11 +106,27 @@ class SecurityToolsInterface:
         """
         Assess current defensive capabilities from security tools
         """
-        return {
-            "strength": self._calculate_defense_strength(),
-            "mobility": self._calculate_response_capability(),
-            "supplies": self._calculate_resource_availability()
-        }
+        try:
+            logging.info("Calculating defense strength...")
+            strength = self._calculate_defense_strength()
+            logging.info(f"Defense strength: {strength}")
+
+            logging.info("Calculating response capability...")
+            mobility = self._calculate_response_capability()
+            logging.info(f"Response capability: {mobility}")
+
+            logging.info("Calculating resource availability...")
+            supplies = self._calculate_resource_availability()
+            logging.info(f"Resource availability: {supplies}")
+
+            return {
+                "strength": strength,
+                "mobility": mobility,
+                "supplies": supplies
+            }
+        except Exception as e:
+            logging.error(f"Error in get_defense_capabilities: {e}", exc_info=True)
+            raise
 
     def get_threat_intelligence(self) -> Dict:
         """
@@ -144,10 +167,31 @@ class SecurityToolsInterface:
 
     def _count_threats_in_hour(self, hour: int) -> int:
         """Count threats detected in specific hour"""
-        # Implementation needed
+        # Implementation soon
         return 0
 
     def _count_mitigated_in_hour(self, hour: int) -> int:
         """Count threats mitigated in specific hour"""
-        # Implementation needed
+        # Implementation soon
         return 0
+
+    def _calculate_defense_strength(self) -> int:
+        """
+        Calculate the overall defense strength based on active systems and configurations.
+        """
+        # Placeholder logic: return a fixed value or calculate based on actual data
+        return 75  # Example: 75% defense strength
+
+    def _calculate_response_capability(self) -> int:
+        """
+        Calculate the system's response capability (e.g., speed of threat mitigation).
+        """
+        # Placeholder logic: return a fixed value or calculate based on actual data
+        return 80  # Example: 80% response capability
+
+    def _calculate_resource_availability(self) -> int:
+        """
+        Calculate the availability of resources for defense operations.
+        """
+        # Placeholder logic: return a fixed value or calculate based on actual data
+        return 90  # Example: 90% resource availability

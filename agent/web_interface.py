@@ -30,7 +30,7 @@ class GaiusDashboard:
         
         self._setup_routes()
         
-        # Register websocket routes on startup
+        # Registering websocket routes on startup
         @self.app.on_event("startup")
         async def startup_event():
             await self._setup_websocket_routes()
@@ -40,9 +40,14 @@ class GaiusDashboard:
         @self.app.get("/status")
         async def get_security_status():
             try:
+                logging.info("Fetching defense capabilities...")
                 defense_status = self.security_tools.get_defense_capabilities()
+                logging.info(f"Defense capabilities: {defense_status}")
+
+                logging.info("Analyzing current threats...")
                 threats = self.commander.analyze_current_threats({})
-                
+                logging.info(f"Threats: {threats}")
+
                 return {
                     "current_posture": {
                         "defense_capabilities": defense_status,
@@ -55,7 +60,7 @@ class GaiusDashboard:
                     "risk_heatmap": self._format_risk_heatmap_data()
                 }
             except Exception as e:
-                logging.error(f"Error getting status: {e}")
+                logging.error(f"Error in /status endpoint: {e}", exc_info=True)
                 raise HTTPException(status_code=500, detail="Internal server error")
 
         @self.app.post("/action/{action_id}")
