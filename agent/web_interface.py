@@ -56,7 +56,7 @@ class GaiusDashboard:
                 logging.info(f"Defense capabilities: {defense_status}")
 
                 logging.info("Analyzing current threats...")
-                threats = self.commander.analyze_current_threats({})
+                threats = await self.commander.analyze_current_threats({})
                 logging.info(f"Threats: {threats}")
 
                 return {

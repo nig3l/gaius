@@ -6,6 +6,7 @@ from datetime import datetime
 from enum import Enum
 from openai import OpenAI
 from response_database import ResponseDatabase
+from handlers.siem import SplunkHandler, ElasticHandler, QRadarHandler  # Import SplunkHandler, ElasticHandler, and QRadarHandler from the appropriate module
 
 # Load environment variables
 load_dotenv()
@@ -88,22 +89,55 @@ class GaiusGeneral:
                 "response_protocols": []
             }
         }
+        
+        # Add response context tracking
+        self.conversation_context = {
+            "previous_responses": [],
+            "threat_history": [],
+            "active_strategies": set(),
+            "current_security_stance": "normal"
+        }
+        
+        # Add security integration configs
+        self.security_integrations = {
+            "siem": {
+                "platforms": ["splunk", "elastic", "qradar"],
+                "connection_status": {},
+                "data_handlers": {}
+            },
+            "edr": {
+                "platforms": ["crowdstrike", "sentinel", "carbon_black"],
+                "connection_status": {},
+                "data_handlers": {}
+            },
+            "soar": {
+                "platforms": ["phantom", "demisto", "swimlane"],
+                "connection_status": {},
+                "data_handlers": {}
+            }
+        }
 
     async def evaluate_situation(self, context: Dict) -> Dict:
-        """Enhanced with rule-based intelligence"""
+        """Enhanced situation evaluation with security platform data"""
         base_assessment = self._perform_base_assessment(context)
         
+        # Gather data from integrated platforms
+        security_data = await self._gather_security_platform_data()
+        enhanced_context = {**context, "security_platform_data": security_data}
+        
         if "chat_message" in context:
-            # Add context from base assessment
             response_context = {
-                **context,
+                **enhanced_context,
                 "threat_level": base_assessment["threat_level"].name.lower(),
                 "sector": self._identify_affected_sector(base_assessment),
                 "strategy": self._determine_strategy(base_assessment),
-                "strength": self._calculate_defense_strength(base_assessment)
+                "strength": self._calculate_defense_strength(base_assessment),
+                "previous_responses": self.conversation_context["previous_responses"][-3:]
             }
             
-            response = self.response_database.get_response(response_context)
+            response = await self._generate_enhanced_response(response_context)
+            self.conversation_context["previous_responses"].append(response)
+            
             return self._merge_assessments(base_assessment, response)
             
         return base_assessment
@@ -143,6 +177,77 @@ class GaiusGeneral:
         except Exception as e:
             logging.error(f"Error in LLM enhancement: {e}")
             return self._merge_assessments(base_assessment, "Ave! I am currently regrouping my thoughts. Please try again shortly.")
+
+    async def integrate_security_platform(self, platform_type: str, config: Dict) -> bool:
+        """Integrate with external security platforms"""
+        try:
+            if platform_type not in self.security_integrations:
+                logging.error(f"Unsupported platform type: {platform_type}")
+                return False
+                
+            platform_name = config.get("platform_name")
+            if platform_name not in self.security_integrations[platform_type]["platforms"]:
+                logging.error(f"Unsupported {platform_type} platform: {platform_name}")
+                return False
+                
+            # Initialize connection handler
+            handler = await self._create_platform_handler(platform_type, config)
+            self.security_integrations[platform_type]["data_handlers"][platform_name] = handler
+            
+            # Test connection
+            if await self._test_platform_connection(handler):
+                self.security_integrations[platform_type]["connection_status"][platform_name] = "connected"
+                return True
+                
+            return False
+            
+        except Exception as e:
+            logging.error(f"Error integrating security platform: {e}")
+            return False
+
+    async def _create_platform_handler(self, platform_type: str, config: Dict):
+        """Create appropriate handler for security platform"""
+        handlers = {
+            "siem": self._create_siem_handler,
+            "edr": self._create_edr_handler,
+            "soar": self._create_soar_handler
+        }
+        return await handlers[platform_type](config)
+
+    async def _create_siem_handler(self, config: Dict):
+        """Create SIEM integration handler"""
+        platform = config.get("platform_name")
+        if platform == "splunk":
+            return SplunkHandler(config)  # i'll need to implement these handler classes
+        elif platform == "elastic":
+            return ElasticHandler(config)
+        elif platform == "qradar":
+            return QRadarHandler(config)
+
+    async def _test_platform_connection(self, handler) -> bool:
+        """Test connection to security platform"""
+        try:
+            return await handler.test_connection()
+        except Exception as e:
+            logging.error(f"Connection test failed: {e}")
+            return False
+
+    async def _gather_security_platform_data(self) -> Dict:
+        """Gather data from integrated security platforms"""
+        security_data = {}
+        
+        for platform_type, config in self.security_integrations.items():
+            platform_data = {}
+            for platform, handler in config["data_handlers"].items():
+                if config["connection_status"].get(platform) == "connected":
+                    try:
+                        platform_data[platform] = await handler.gather_data()
+                    except Exception as e:
+                        logging.error(f"Error gathering data from {platform}: {e}")
+                        
+            security_data[platform_type] = platform_data
+            
+        return security_data
 
     def _get_fallback_response(self, msg: str) -> str:
         """Enhanced fallback response system"""

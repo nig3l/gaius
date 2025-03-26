@@ -1,3 +1,4 @@
+import asyncio
 from typing import Dict, List
 from security_tools import SecurityToolsInterface
 from gaius_core import GaiusGeneral
@@ -13,16 +14,23 @@ class CommandInterface:
             "tactical_advice": self.get_tactical_advice
         }
 
-    def process_command(self, command: str, params: Dict) -> Dict:
+    async def process_command(self, command: str, params: Dict) -> Dict:
         """Process incoming commands from security teams"""
-        if command in self.command_types:
-            return self.command_types[command](params)
-        return {"status": "error", "message": "Unknown command"}
+        try:
+            if command in self.command_types:
+                handler = self.command_types[command]
+                if asyncio.iscoroutinefunction(handler):
+                    return await handler(params)
+                return handler(params)
+            return {"status": "error", "message": "Unknown command"}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
 
-    def analyze_current_threats(self, params: Dict) -> Dict:
+    async def analyze_current_threats(self, params: Dict) -> Dict:
         """Get Gaius's analysis of current threat landscape"""
         ids_alerts = self.security_tools.analyze_ids_alerts()
-        assessment = self.gaius.evaluate_situation({
+        # await here since evaluate_situation is async
+        assessment = await self.gaius.evaluate_situation({
             "threat_data": ids_alerts,
             "context": params.get("context", {})
         })
@@ -51,18 +59,21 @@ class CommandInterface:
             "message": "IDS configuration updated" if success else "Configuration failed"
         }
 
-    def get_tactical_advice(self, params: Dict) -> Dict:
+    async def get_tactical_advice(self, params: Dict) -> Dict:
         """Get specific tactical recommendations from Gaius"""
-        situation = {
-            "terrain": self.security_tools.get_network_topology(),
-            "current_threats": params.get("threats", []),
-            "defense_posture": self.security_tools.get_defense_capabilities()
-        }
-        assessment = self.gaius.evaluate_situation(situation)
-        return {
-            "status": "success",
-            "tactical_advice": self._format_tactical_advice(assessment)
-        }
+        try:
+            situation = {
+                "terrain": self.security_tools.get_network_topology(),
+                "current_threats": params.get("threats", []),
+                "defense_posture": self.security_tools.get_defense_capabilities()
+            }
+            assessment = await self.gaius.evaluate_situation(situation)
+            return {
+                "status": "success",
+                "tactical_advice": self._format_tactical_advice(assessment)
+            }
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
 
     def _get_active_defenses(self) -> List[str]:
         """Get list of currently active defense mechanisms"""
@@ -76,10 +87,30 @@ class CommandInterface:
             "Review defense-in-depth strategy"
         ]
 
-    def _format_tactical_advice(self, assessment: Dict) -> Dict:
+    async def _format_tactical_advice(self, assessment: Dict) -> Dict:
         """Format tactical advice in clear, actionable terms"""
-        return {
-            "immediate_actions": [],
-            "strategic_changes": [],
-            "resource_allocation": []
-        }
+        try:
+            return {
+                "immediate_actions": await self._generate_immediate_actions(assessment),
+                "strategic_changes": await self._generate_strategic_changes(assessment),
+                "resource_allocation": await self._generate_resource_allocation(assessment)
+            }
+        except Exception as e:
+            return {
+                "immediate_actions": [],
+                "strategic_changes": [],
+                "resource_allocation": [],
+                "error": str(e)
+            }
+
+    async def _generate_immediate_actions(self, assessment: Dict) -> List[str]:
+        # Implement immediate action generation logic
+        return []
+
+    async def _generate_strategic_changes(self, assessment: Dict) -> List[str]:
+        # Implement strategic changes generation logic
+        return []
+
+    async def _generate_resource_allocation(self, assessment: Dict) -> List[str]:
+        # Implement resource allocation logic
+        return []
