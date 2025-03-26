@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 from enum import Enum
 from openai import OpenAI
+from response_database import ResponseDatabase
 
 # Load environment variables
 load_dotenv()
@@ -19,6 +20,7 @@ class GaiusGeneral:
     def __init__(self):
         self.name = "Gaius Julius Caesar"
         self.title = "Imperator"
+        self.response_database = ResponseDatabase()
         
         #  Deepseek API key from environment variable
         deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
@@ -88,14 +90,23 @@ class GaiusGeneral:
         }
 
     async def evaluate_situation(self, context: Dict) -> Dict:
-        """Made async to work with FastAPI websockets"""
+        """Enhanced with rule-based intelligence"""
         base_assessment = self._perform_base_assessment(context)
-        llm_enhanced_assessment = await self._enhance_with_llm(
-            base_assessment,
-            self.strategic_principles,
-            context
-        )
-        return llm_enhanced_assessment
+        
+        if "chat_message" in context:
+            # Add context from base assessment
+            response_context = {
+                **context,
+                "threat_level": base_assessment["threat_level"].name.lower(),
+                "sector": self._identify_affected_sector(base_assessment),
+                "strategy": self._determine_strategy(base_assessment),
+                "strength": self._calculate_defense_strength(base_assessment)
+            }
+            
+            response = self.response_database.get_response(response_context)
+            return self._merge_assessments(base_assessment, response)
+            
+        return base_assessment
 
     async def _enhance_with_llm(self, base_assessment: Dict, principles: Dict, context: Dict) -> Dict:
         """Modified to use async/await with proper error handling"""
@@ -326,3 +337,27 @@ class GaiusGeneral:
         except Exception as e:
             logging.error(f"Error merging assessments: {e}")
             return base_assessment
+
+    def _identify_affected_sector(self, assessment: Dict) -> str:
+        """Determine which sector is most relevant to the current situation"""
+        if "network_vulnerability" in assessment.get("key_factors", []):
+            return "network perimeter"
+        elif "authentication_breach" in assessment.get("key_factors", []):
+            return "access control"
+        return "general defense"
+
+    def _determine_strategy(self, assessment: Dict) -> str:
+        """Select appropriate strategic response"""
+        if assessment["threat_level"] in [ThreatLevel.HIGH, ThreatLevel.CRITICAL]:
+            return "active defense protocol"
+        return "standard defensive posture"
+
+    def _calculate_defense_strength(self, assessment: Dict) -> int:
+        """Calculate current defensive capability percentage"""
+        factors = assessment.get("key_factors", [])
+        strengths = len([f for f in factors if "advantage" in f or "capability" in f])
+        weaknesses = len([f for f in factors if "vulnerability" in f or "limited" in f])
+        
+        base_strength = 75
+        modifier = (strengths - weaknesses) * 5
+        return min(100, max(0, base_strength + modifier))
